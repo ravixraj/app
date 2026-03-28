@@ -10,8 +10,7 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check .",
-		"format": "prettier --write ."
+		"fmt": "prettier --write . && prettier --check ."
 	},
 	"devDependencies": {
 		"@fontsource-variable/geist": "^5.2.8",
@@ -33,5 +32,8 @@
 		"typescript": "^5.9.3",
 		"vite": "^7.3.1",
 		"vite-plugin-devtools-json": "^1.0.0"
+	},
+	"dependencies": {
+		"mode-watcher": "^1.1.0"
 	}
 }
