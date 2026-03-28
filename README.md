@@ -1,42 +1,29 @@
-# sv
+## FreeAPI APP
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+<p align="center">
 
-## Creating a project
+[![X Badge](https://img.shields.io/badge/-@eravitw-1ca0f1?style=social&labelColor=red&logo=x&logoColor=black&link=https://x.com/eravitw)](https://x.com/eravitw) &nbsp;
+[![Mail Badge](https://img.shields.io/badge/-hello@raviraj.xyz-c0392b?style=flat&labelColor=c0392b&logo=gmail&logoColor=white)](mailto:hello@raviraj.xyz) &nbsp;
+[![TypeScript](https://img.shields.io/badge/-TypeScript-blue?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/) &nbsp;
+[![Bun](https://img.shields.io/badge/-Bun-black?style=flat&logo=bun&logoColor=white)](https://bun.sh/) &nbsp;
+[![Node.js](https://img.shields.io/badge/-Node.js-green?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/) &nbsp;
+[![Tailwind](https://img.shields.io/badge/-Tailwind-blue?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/) &nbsp;
+[![Svelte](https://img.shields.io/badge/-Svelte-orange?style=flat&logo=svelte&logoColor=white)](https://svelte.dev/) &nbsp;
+[![shadcn](https://img.shields.io/badge/-shadcn-gray?style=flat&logo=&logoColor=white)](https://ui.shadcn.com/) &nbsp;
+[![API](https://img.shields.io/badge/-API-blue?style=flat&logo=http&logoColor=white)](#) &nbsp;
+[![JWT](https://img.shields.io/badge/-JWT-purple?style=flat&logo=jsonwebtokens&logoColor=white)](https://jwt.io/) &nbsp;
+[![Prettier](https://img.shields.io/badge/-Prettier-red?style=flat&logo=prettier&logoColor=white)](https://prettier.io/) &nbsp;
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org) &nbsp;
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE) &nbsp;
 
-If you're seeing this, you've probably already done this step. Congrats!
+</p>
 
-```sh
-# create a new project
-npx sv create my-app
+### Installation & Setup
+
+```bash
+git clone git@github.com:ravirajbhardwaj/app.git
+cd app
+bun install
+cp env.sample .env
+bun dev
 ```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-bun x sv@0.13.0 create --template minimal --types ts --add prettier tailwindcss="plugins:none" sveltekit-adapter="adapter:vercel" devtools-json mcp="ide:opencode,vscode,other,gemini+setup:remote" --install bun .
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
