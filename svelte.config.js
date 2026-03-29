@@ -13,7 +13,12 @@ const config = {
 			return isExternalLibrary ? undefined : true;
 		}
 	},
-	kit: { adapter: adapter() }
+	kit: { adapter: adapter() },
+	vitePlugin: {
+		dynamicCompileOptions: ({ filename }) =>
+			filename.includes('node_modules') ? undefined : { runes: true },
+		inspector: true
+	}
 };
 
 export default config;
