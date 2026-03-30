@@ -11,7 +11,8 @@ const config = {
 			const isExternalLibrary = pathSegments.includes('node_modules');
 
 			return isExternalLibrary ? undefined : true;
-		}
+		},
+		warningFilter: (warning) => warning.code !== 'state_referenced_locally'
 	},
 	kit: { adapter: adapter() },
 	vitePlugin: {
