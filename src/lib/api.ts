@@ -2,7 +2,7 @@ const BASE = 'https://api.freeapi.app/api/v1';
 
 // Generic API response & Request config type
 type RequestConfig<T = unknown> = {
-	method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+	method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 	path: string;
 	data?: T;
 	token?: string | null;
@@ -37,5 +37,8 @@ export const api = {
 	put: <T>(path: string, data: T, token?: string | null) =>
 		send({ method: 'PUT', path, data, token }),
 
-	del: (path: string, token?: string | null) => send({ method: 'DELETE', path, token })
+	del: (path: string, token?: string | null) => send({ method: 'DELETE', path, token }),
+
+	patch: <T>(path: string, data: T, token?: string | null) =>
+		send({ method: 'PATCH', path, data, token })
 };
