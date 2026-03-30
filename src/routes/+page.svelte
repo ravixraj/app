@@ -32,7 +32,7 @@
 	<div
 		class="glass-card group flex cursor-default flex-wrap items-center justify-center gap-4 rounded-xl p-5"
 	>
-		<div class="flex items-center gap-3">
+		<a href="/auth" class="flex items-center gap-3">
 			<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20">
 				<Shield />
 			</div>
@@ -40,29 +40,9 @@
 				<h4 class="font-display text-sm font-semibold">Authentication</h4>
 				<span class="text-xs text-slate-500">JWT, OAuth, Sessions</span>
 			</div>
-		</div>
+		</a>
 
-		<div class="flex items-center gap-3">
-			<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/20">
-				<Users />
-			</div>
-			<div class="min-w-0">
-				<h4 class="font-display text-sm font-semibold">Social Media</h4>
-				<span class="text-xs text-slate-500">Posts, Likes, Follows</span>
-			</div>
-		</div>
-
-		<div class="flex items-center gap-3">
-			<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-500/20">
-				<ShoppingCart />
-			</div>
-			<div class="min-w-0">
-				<h4 class="font-display text-sm font-semibold">E-Commerce</h4>
-				<span class="text-xs text-slate-500">Products, Cart, Orders</span>
-			</div>
-		</div>
-
-		<div class="flex items-center gap-3">
+		<a href="/todo" class="flex items-center gap-3">
 			<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/20">
 				<SquareCheck />
 			</div>
@@ -70,9 +50,29 @@
 				<h4 class="font-display text-sm font-semibold">Todo App</h4>
 				<span class="text-xs text-slate-500">CRUD Operations</span>
 			</div>
-		</div>
+		</a>
 
-		<div class="flex items-center gap-3">
+		<a href="/social" class="flex items-center gap-3">
+			<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/20">
+				<Users />
+			</div>
+			<div class="min-w-0">
+				<h4 class="font-display text-sm font-semibold">Social Media</h4>
+				<span class="text-xs text-slate-500">Posts, Likes, Follows</span>
+			</div>
+		</a>
+
+		<a href="/shop" class="flex items-center gap-3">
+			<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-500/20">
+				<ShoppingCart />
+			</div>
+			<div class="min-w-0">
+				<h4 class="font-display text-sm font-semibold">E-Commerce</h4>
+				<span class="text-xs text-slate-500">Products, Cart, Orders</span>
+			</div>
+		</a>
+
+		<a href="/chat" class="flex items-center gap-3">
 			<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-500/20">
 				<MessageSquare />
 			</div>
@@ -80,7 +80,7 @@
 				<h4 class="font-display text-sm font-semibold">Chat App</h4>
 				<span class="text-xs text-slate-500">Real-time, WebSocket</span>
 			</div>
-		</div>
+		</a>
 	</div>
 </section>
 
