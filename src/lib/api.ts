@@ -1,4 +1,4 @@
-const BASE = 'https://api.freeapi.app/api/v1';
+export const BASE = 'https://api.freeapi.app/api/v1';
 
 // Generic API response & Request config type
 type RequestConfig<T = unknown> = {
@@ -29,7 +29,7 @@ async function send<T = unknown>({
 }
 
 export const api = {
-	get: (path: string, token?: string) => send({ method: 'GET', path, token }),
+	get: (path: string, token?: string | null) => send({ method: 'GET', path, token }),
 
 	post: <T>(path: string, data: T, token?: string | null) =>
 		send({ method: 'POST', path, data, token }),
