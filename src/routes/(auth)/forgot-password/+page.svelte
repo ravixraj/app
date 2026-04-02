@@ -4,11 +4,19 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { MailIcon, KeyRound } from '@lucide/svelte';
 	import { superForm } from 'sveltekit-superforms';
+	import { MetaTags } from 'svelte-meta-tags';
+	import { createPageMetaTags } from '$lib/const.js';
 
 	let { data } = $props();
 
+	const metaTags = createPageMetaTags({
+		title: 'Forgot Password',
+		description: 'Reset your FreeAPI account password. Enter your email to receive a reset link.',
+		canonical: '/forgot-password'
+	});
+
 	const { form, errors, enhance, submitting, message } = superForm(data.form, {
-		resetForm: false
+		resetForm: true
 	});
 </script>
 
@@ -70,3 +78,5 @@
 		</div>
 	</div>
 </div>
+
+<MetaTags {...metaTags} />

@@ -4,11 +4,19 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { LockKeyhole, KeySquare } from '@lucide/svelte';
 	import { superForm } from 'sveltekit-superforms';
+	import { MetaTags } from 'svelte-meta-tags';
+	import { createPageMetaTags } from '$lib/const.js';
 
 	let { data } = $props();
 
+	const metaTags = createPageMetaTags({
+		title: 'Change Password',
+		description: 'Update your account password securely.',
+		canonical: '/change-password'
+	});
+
 	const { form, errors, enhance, submitting, message, constraints } = superForm(data.form, {
-		resetForm: false
+		resetForm: true
 	});
 </script>
 
@@ -93,3 +101,5 @@
 		</form>
 	</div>
 </div>
+
+<MetaTags {...metaTags} />

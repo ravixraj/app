@@ -3,8 +3,16 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { MailCheck, RefreshCw } from '@lucide/svelte';
 	import { superForm } from 'sveltekit-superforms';
+	import { MetaTags } from 'svelte-meta-tags';
+	import { createPageMetaTags } from '$lib/const.js';
 
 	let { data } = $props();
+
+	const metaTags = createPageMetaTags({
+		title: 'Verify Email',
+		description: 'Verify your email address to activate your FreeAPI account.',
+		canonical: '/verify-email'
+	});
 
 	const { enhance, submitting } = superForm(data.resendForm);
 </script>
@@ -51,3 +59,5 @@
 		</div>
 	</div>
 </div>
+
+<MetaTags {...metaTags} />

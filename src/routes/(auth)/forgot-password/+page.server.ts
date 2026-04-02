@@ -23,7 +23,6 @@ export const actions: Actions = {
 
 		if (!res.ok) {
 			const json = await res.json().catch(() => null);
-			console.log(json);
 			const errMsg = json?.message ?? 'Forgot Password failed. Please try again.';
 
 			return message(form, { type: 'error', text: errMsg });

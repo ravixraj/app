@@ -4,7 +4,17 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { LockKeyhole, UserIcon, MailIcon, LogIn, UserPlus } from '@lucide/svelte';
 	import { superForm } from 'sveltekit-superforms';
+	import { MetaTags } from 'svelte-meta-tags';
+	import { createPageMetaTags } from '$lib/const.js';
+
 	let { data } = $props();
+
+	const metaTags = createPageMetaTags({
+		title: 'Login & Register',
+		description:
+			'Sign in to your FreeAPI account or create a new account to access todos, social media, and e-commerce features.',
+		canonical: '/auth'
+	});
 
 	const {
 		form: registerForm,
@@ -207,3 +217,5 @@
 		</div>
 	</div>
 </div>
+
+<MetaTags {...metaTags} />
