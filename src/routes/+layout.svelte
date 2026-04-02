@@ -3,11 +3,16 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { ModeWatcher } from 'mode-watcher';
 	import AnimatedThemeToggler from '$lib/components/magic/animated-theme-toggler/animated-theme-toggler.svelte';
+	import { MetaTags } from 'svelte-meta-tags';
+	import { createBaseMetaTags } from '$lib/const.js';
 
 	let { children } = $props();
+
+	const baseMetaTags = createBaseMetaTags();
 </script>
 
 <ModeWatcher defaultMode="system" />
+<MetaTags {...baseMetaTags} />
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 <main class="h-full w-full antialiased">
 	{@render children()}
