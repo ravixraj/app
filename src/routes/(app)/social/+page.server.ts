@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { api, BASE } from '$lib/api';
+import { createPageMetaTags } from '$lib/const.js';
 
 const createPostSchema = z.object({
 	content: z
@@ -21,7 +22,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		posts: data.data ?? [],
 		currentUserId: locals.user._id,
-		form: await superValidate(zod4(createPostSchema))
+		form: await superValidate(zod4(createPostSchema)),
+		metaTags: createPageMetaTags({
+			title: 'Social Feed',
+			description: 'Browse and share posts, connect with others on FreeAPI social feed.',
+			canonical: '/social'
+		})
 	};
 };
 

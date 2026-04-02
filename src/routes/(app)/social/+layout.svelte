@@ -106,13 +106,10 @@
 				variant="outline"
 				onclick={async () => {
 					try {
-						await fetch('/api/users/logout', {
-							method: 'POST'
-						});
+						await api.post('users/logout', {});
+					} catch {
+					} finally {
 						window.location.href = '/auth';
-					} catch (err) {
-						console.error('Logout API call failed:', err);
-						return;
 					}
 				}}
 				class="gap-2 font-mono text-xs tracking-widest uppercase"
