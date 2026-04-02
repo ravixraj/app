@@ -4,6 +4,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import z from 'zod';
 import type { PageServerLoad } from './$types.js';
 import type { Actions } from '@sveltejs/kit';
+import { createPageMetaTags } from '$lib/const.js';
 
 const todoSchema = z.object({
 	title: z.string().min(1, 'Title is required').max(50, 'Title must be less than 50 characters'),
@@ -28,7 +29,12 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	return {
 		todos: json.data ?? [],
-		form: await superValidate(zod4(todoSchema))
+		form: await superValidate(zod4(todoSchema)),
+		metaTags: createPageMetaTags({
+			title: 'Todos',
+			description: 'Manage your tasks with FreeAPI todo application.',
+			canonical: '/todo'
+		})
 	};
 };
 

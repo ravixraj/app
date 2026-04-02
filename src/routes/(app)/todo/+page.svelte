@@ -18,6 +18,7 @@
 	import { page } from '$app/stores';
 	import { api } from '$lib/api.js';
 	import { superForm } from 'sveltekit-superforms';
+	import { MetaTags } from 'svelte-meta-tags';
 
 	let { data } = $props();
 
@@ -320,3 +321,5 @@
 		{/if}
 	</div>
 </div>
+
+<MetaTags {...data.metaTags} />
