@@ -1,21 +1,13 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button/button.svelte';
-	import {
-		Shield,
-		Users,
-		ShoppingCart,
-		SquareCheck,
-		Code,
-		Server,
-		ArrowRight
-	} from '@lucide/svelte';
+	import { Shield, Users, SquareCheck, Code, Server, ArrowRight } from '@lucide/svelte';
 	import { MetaTags } from 'svelte-meta-tags';
 	import { createPageMetaTags } from '$lib/const.js';
 
 	const metaTags = createPageMetaTags({
 		title: 'Home',
 		description:
-			'FreeAPI Client - A full-featured application with authentication, todo management, social media, and e-commerce built on SvelteKit and FreeAPI.',
+			'FreeAPI Client - A full-featured application with authentication, todo management, social media, built on SvelteKit and FreeAPI.',
 		canonical: '/'
 	});
 
@@ -46,15 +38,6 @@
 			color: 'text-sky-400',
 			bg: 'bg-sky-500/10',
 			border: 'hover:border-sky-500/40'
-		},
-		{
-			href: '/shop',
-			icon: ShoppingCart,
-			label: 'e-commerce',
-			sub: 'Products · Cart · Orders',
-			color: 'text-orange-400',
-			bg: 'bg-orange-500/10',
-			border: 'hover:border-orange-500/40'
 		}
 	];
 </script>
@@ -127,7 +110,7 @@
 				what's inside
 			</p>
 
-			<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+			<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
 				{#each features as f}
 					<a
 						href={f.href}
