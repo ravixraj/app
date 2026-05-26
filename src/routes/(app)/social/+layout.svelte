@@ -10,36 +10,11 @@
 
 	let { data, children } = $props();
 
-	type SuggestedUser = {
-		_id: string;
-		username: string;
-		avatar?: { url: string };
-		isFollowing: boolean;
-	};
-
-	let suggestions = $state<SuggestedUser[]>(data.suggestions ?? []);
-
 	// ── Nav links ─────────────────────────────────────────
 	const navLinks = [
 		{ href: '/social/bookmarks', icon: Bookmark, label: 'bookmarks' },
 		{ href: `/social/${data.currentUser?.account?.username}`, icon: UserCircle, label: 'profile' }
 	];
-
-	// ── Follow / Unfollow suggestion ──────────────────────
-	async function toggleFollow(user: SuggestedUser) {
-		try {
-			if (user.isFollowing) {
-				await api.del(`social-media/follow/${user._id}`);
-			} else {
-				await api.post(`social-media/follow/${user._id}`, {});
-			}
-			suggestions = suggestions.map((s) =>
-				s._id === user._id ? { ...s, isFollowing: !s.isFollowing } : s
-			);
-		} catch {
-			// silent fail — not critical
-		}
-	}
 
 	// ── Active link helper ────────────────────────────────
 	function isActive(href: string) {
@@ -124,57 +99,4 @@
 	<main class="flex-1 overflow-y-auto">
 		{@render children()}
 	</main>
-
-	<!-- ── Right Panel — Suggestions ─────────────────────── -->
-	<aside
-		class="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 border-l border-border px-4 py-8 lg:flex"
-	>
-		<div class="flex items-center gap-2">
-			<Users class="h-4 w-4 text-sidebar-primary" />
-			<span class="font-mono text-xs tracking-widest text-muted-foreground uppercase">
-				suggestions
-			</span>
-		</div>
-
-		<Separator class="opacity-20" />
-
-		<div class="flex flex-col gap-4">
-			{#if suggestions.length === 0}
-				<p class="font-mono text-xs text-muted-foreground opacity-50">no suggestions.</p>
-			{/if}
-
-			{#each suggestions as user (user._id)}
-				<div class="flex items-center gap-3">
-					<!-- Avatar -->
-					{#if user.avatar?.url}
-						<img
-							src={user.avatar.url}
-							alt={user.username}
-							class="h-7 w-7 shrink-0 rounded-full object-cover"
-						/>
-					{:else}
-						<UserCircle class="h-7 w-7 shrink-0 text-muted-foreground" />
-					{/if}
-
-					<!-- Username -->
-					<a
-						href="/social/profile/{user.username}"
-						class="min-w-0 flex-1 truncate font-mono text-xs transition-colors hover:text-sidebar-primary"
-					>
-						@{user.username}
-					</a>
-
-					<!-- Follow button -->
-					<Button
-						variant={user.isFollowing ? 'default' : 'outline'}
-						size="icon"
-						onclick={() => toggleFollow(user)}
-						class="h-6 w-6 shrink-0"
-					>
-						<UserPlus class="h-3 w-3" />
-					</Button>
-				</div>
-			{/each}
-		</div>
-	</aside>
 </div>

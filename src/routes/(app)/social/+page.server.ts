@@ -22,6 +22,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		posts: data.data ?? [],
 		currentUserId: locals.user._id,
+		accessToken: locals.accessToken,
 		form: await superValidate(zod4(createPostSchema)),
 		metaTags: createPageMetaTags({
 			title: 'Social Feed',

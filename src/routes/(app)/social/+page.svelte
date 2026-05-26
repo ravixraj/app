@@ -8,16 +8,13 @@
 		Send,
 		X,
 		ChevronDown,
-		ChevronUp,
-		UserCircle
+		ChevronUp
 	} from '@lucide/svelte';
-	import * as InputGroup from '$lib/components/ui/input-group/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
+	import * as InputGroup from '$lib/components/ui/input-group/index';
+	import { Button } from '$lib/components/ui/button/index';
+	import { Separator } from '$lib/components/ui/separator/index';
 	import { superForm } from 'sveltekit-superforms';
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
-	import { api } from '$lib/api.js';
+	import { api } from '$lib/api';
 	import Avatar from '$lib/components/ui/avatar/avatar.svelte';
 	import AvatarImage from '$lib/components/ui/avatar/avatar-image.svelte';
 	import AvatarFallback from '$lib/components/ui/avatar/avatar-fallback.svelte';
@@ -73,6 +70,8 @@
 	let commentsMap = $state<Record<string, Comment[]>>({});
 	let commentInput = $state<Record<string, string>>({});
 	let loadingComments = $state<Record<string, boolean>>({});
+	let editingCommentByPost = $state<Record<string, string | null>>({});
+	let editCommentInput = $state<Record<string, string>>({});
 
 	// ── Sync posts when load() re-runs ───────────────────
 	$effect(() => {
@@ -96,12 +95,12 @@
 	async function toggleLike(post: Post) {
 		try {
 			if (post.isLiked) {
-				await api.del(`social-media/like/post/${post._id}`);
+				await api.del(`social-media/like/post/${post._id}`, data.accessToken);
 				posts = posts.map((p) =>
 					p._id === post._id ? { ...p, isLiked: false, likes: p.likes - 1 } : p
 				);
 			} else {
-				await api.post(`social-media/like/post/${post._id}`, {});
+				await api.post(`social-media/like/post/${post._id}`, {}, data.accessToken);
 				posts = posts.map((p) =>
 					p._id === post._id ? { ...p, isLiked: true, likes: p.likes + 1 } : p
 				);
@@ -115,10 +114,10 @@
 	async function toggleBookmark(post: Post) {
 		try {
 			if (post.isBookmarked) {
-				await api.del(`social-media/bookmarks/${post._id}`);
+				await api.del(`social-media/bookmarks/${post._id}`, data.accessToken);
 				posts = posts.map((p) => (p._id === post._id ? { ...p, isBookmarked: false } : p));
 			} else {
-				await api.post(`social-media/bookmarks/${post._id}`, {});
+				await api.post(`social-media/bookmarks/${post._id}`, {}, data.accessToken);
 				posts = posts.map((p) => (p._id === post._id ? { ...p, isBookmarked: true } : p));
 			}
 		} catch {
@@ -129,7 +128,7 @@
 	// ── Delete post ───────────────────────────────────────
 	async function deletePost(id: string) {
 		try {
-			await api.del(`social-media/posts/${id}`);
+			await api.del(`social-media/posts/${id}`, data.accessToken);
 			posts = posts.filter((p) => p._id !== id);
 		} catch {
 			error = 'failed to delete post.';
@@ -144,8 +143,11 @@
 			try {
 				const res = await api.get(`social-media/comments/post/${postId}`);
 				const json = await res.json();
-				console.log('Loaded comments for post', postId, json.data);
-				commentsMap[postId] = json.data ?? [];
+				if (!res.ok) {
+					error = json?.message || 'failed to load comments.';
+					return;
+				}
+				commentsMap[postId] = Array.isArray(json.data) ? json.data : (json.data?.comments ?? []);
 			} catch {
 				error = 'failed to load comments.';
 			} finally {
@@ -158,8 +160,17 @@
 		const content = commentInput[postId]?.trim();
 		if (!content) return;
 		try {
-			const res = await api.post(`social-media/comments/${postId}`, { content });
+			const res = await api.post(
+				`social-media/comments/post/${postId}`,
+				{ content },
+				data.accessToken
+			);
+			console.log({ res });
 			const json = await res.json();
+			if (!res.ok) {
+				error = json?.message || 'failed to add comment.';
+				return;
+			}
 			commentsMap[postId] = [json.data, ...(commentsMap[postId] ?? [])];
 			posts = posts.map((p) => (p._id === postId ? { ...p, comments: p.comments + 1 } : p));
 			commentInput[postId] = '';
@@ -170,11 +181,55 @@
 
 	async function deleteComment(postId: string, commentId: string) {
 		try {
-			await api.del(`social-media/comments/${commentId}`);
+			const res = await api.del(`social-media/comments/${commentId}`, data.accessToken);
+			if (!res.ok) {
+				const json = await res.json().catch(() => null);
+				error = json?.message || 'failed to delete comment.';
+				return;
+			}
 			commentsMap[postId] = commentsMap[postId].filter((c) => c._id !== commentId);
 			posts = posts.map((p) => (p._id === postId ? { ...p, comments: p.comments - 1 } : p));
+			if (editingCommentByPost[postId] === commentId) {
+				editingCommentByPost[postId] = null;
+				delete editCommentInput[commentId];
+			}
 		} catch {
 			error = 'failed to delete comment.';
+		}
+	}
+
+	function startEditComment(postId: string, comment: Comment) {
+		editingCommentByPost[postId] = comment._id;
+		editCommentInput[comment._id] = comment.content;
+	}
+
+	function cancelEditComment(postId: string, commentId: string) {
+		editingCommentByPost[postId] = null;
+		delete editCommentInput[commentId];
+	}
+
+	async function updateComment(postId: string, commentId: string) {
+		const content = editCommentInput[commentId]?.trim();
+		if (!content) return;
+		try {
+			const res = await api.patch(
+				`social-media/comments/${commentId}`,
+				{ content },
+				data.accessToken
+			);
+			const json = await res.json();
+			if (!res.ok) {
+				error = json?.message || 'failed to update comment.';
+				return;
+			}
+
+			commentsMap[postId] = commentsMap[postId].map((comment) =>
+				comment._id === commentId ? { ...comment, content: json.data?.content ?? content } : comment
+			);
+			editingCommentByPost[postId] = null;
+			delete editCommentInput[commentId];
+		} catch {
+			error = 'failed to update comment.';
 		}
 	}
 
@@ -282,7 +337,6 @@
 		{/if}
 
 		{#each posts as post (post._id)}
-			{console.log(posts[0])}
 			<div class="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
 				<!-- Post header -->
 				<div class="flex items-center justify-between">
@@ -350,7 +404,6 @@
 					<!-- Comment toggle -->
 					<button
 						onclick={() => {
-							console.log('Toggling comments for post:', post._id);
 							toggleComments(post._id);
 						}}
 						class="flex items-center gap-1 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -411,19 +464,58 @@
 									<span class="font-mono text-xs text-sidebar-primary">
 										@{comment.author.account?.username}
 									</span>
-									<p class="font-mono text-xs leading-relaxed text-muted-foreground">
-										{comment.content}
-									</p>
+									{#if editingCommentByPost[post._id] === comment._id}
+										<div class="flex gap-2">
+											<InputGroup.Root class="flex-1">
+												<InputGroup.Input
+													type="text"
+													bind:value={editCommentInput[comment._id]}
+													onkeydown={(e) =>
+														e.key === 'Enter' && updateComment(post._id, comment._id)}
+												/>
+											</InputGroup.Root>
+										</div>
+									{:else}
+										<p class="font-mono text-xs leading-relaxed text-muted-foreground">
+											{comment.content}
+										</p>
+									{/if}
 								</div>
 								{#if comment.author._id === data.currentUserId}
-									<Button
-										variant="ghost"
-										size="icon"
-										onclick={() => deleteComment(post._id, comment._id)}
-										class="h-5 w-5 shrink-0 text-destructive hover:text-destructive"
-									>
-										<Trash2 class="h-3 w-3" />
-									</Button>
+									<div class="flex items-center gap-1">
+										{#if editingCommentByPost[post._id] === comment._id}
+											<Button
+												variant="ghost"
+												onclick={() => cancelEditComment(post._id, comment._id)}
+												class="h-6 px-2 font-mono text-[10px] tracking-widest uppercase"
+											>
+												cancel
+											</Button>
+											<Button
+												variant="ghost"
+												onclick={() => updateComment(post._id, comment._id)}
+												class="h-6 px-2 font-mono text-[10px] tracking-widest text-sidebar-primary uppercase"
+											>
+												save
+											</Button>
+										{:else}
+											<Button
+												variant="ghost"
+												onclick={() => startEditComment(post._id, comment)}
+												class="h-6 px-2 font-mono text-[10px] tracking-widest uppercase"
+											>
+												edit
+											</Button>
+											<Button
+												variant="ghost"
+												size="icon"
+												onclick={() => deleteComment(post._id, comment._id)}
+												class="h-5 w-5 shrink-0 text-destructive hover:text-destructive"
+											>
+												<Trash2 class="h-3 w-3" />
+											</Button>
+										{/if}
+									</div>
 								{/if}
 							</div>
 						{/each}
