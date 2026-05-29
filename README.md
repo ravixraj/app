@@ -33,7 +33,3 @@ cd mobile
 npm i
 npm start
 ```
-
-### Mobile Demo
-
-<p align="center"> <video src="./static/mobile_demo.mp4" controls width="300"></video> </p>
