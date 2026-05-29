@@ -172,6 +172,7 @@
 			{/if}
 
 			<Button
+                type="submit"
 				variant="outline"
 				disabled={$submitting}
 				class="w-full gap-2 font-mono text-xs tracking-widest uppercase"
