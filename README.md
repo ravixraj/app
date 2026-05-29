@@ -9,6 +9,8 @@
 [![Node.js](https://img.shields.io/badge/-Node.js-green?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/) &nbsp;
 [![Tailwind](https://img.shields.io/badge/-Tailwind-blue?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/) &nbsp;
 [![Svelte](https://img.shields.io/badge/-Svelte-orange?style=flat&logo=svelte&logoColor=white)](https://svelte.dev/) &nbsp;
+[![React Native](https://img.shields.io/badge/-React%20Native-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactnative.dev/) &nbsp;
+[![Expo](https://img.shields.io/badge/-Expo-000020?style=flat&logo=expo&logoColor=white)](https://expo.dev/) &nbsp;
 [![shadcn](https://img.shields.io/badge/-shadcn-gray?style=flat&logo=&logoColor=white)](https://ui.shadcn.com/) &nbsp;
 [![API](https://img.shields.io/badge/-API-blue?style=flat&logo=http&logoColor=white)](#) &nbsp;
 [![JWT](https://img.shields.io/badge/-JWT-purple?style=flat&logo=jsonwebtokens&logoColor=white)](https://jwt.io/) &nbsp;
@@ -23,7 +25,15 @@
 ```bash
 git clone git@github.com:ravirajbhardwaj/app.git
 cd app
-bun install
-cp env.sample .env
+bun i
 bun dev
+
+# For mobile
+cd mobile
+npm i
+npm start
 ```
+
+### Mobile Demo
+
+<p align="center"> <video src="./static/mobile_demo.mp4" controls width="300"></video> </p>
