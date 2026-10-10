@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { api } from '$lib/api';
+import { api } from '#lib/api.js';
 
 export const load: LayoutServerLoad = async ({ locals, fetch }) => {
 	const profileRes = await api.get(`social-media/profile`, locals.accessToken);

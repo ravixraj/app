@@ -1,43 +1,17 @@
 <script lang="ts">
-	import * as InputGroup from '$lib/components/ui/input-group/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
+	import * as InputGroup from '#lib/components/ui/input-group/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
 	import { LockKeyhole, UserIcon, MailIcon, LogIn, UserPlus } from '@lucide/svelte';
-	import { superForm } from 'sveltekit-superforms';
 	import { MetaTags } from 'svelte-meta-tags';
-	import { createPageMetaTags } from '$lib/const.js';
-
-	let { data } = $props();
+	import { createPageMetaTags } from '#lib/const.js';
+	import { register, login } from './remote';
 
 	const metaTags = createPageMetaTags({
 		title: 'Login & Register',
 		description:
 			'Sign in to your FreeAPI account or create a new account to access todos, social media, and e-commerce features.',
 		canonical: '/auth'
-	});
-
-	const {
-		form: registerForm,
-		errors: registerErrors,
-		enhance: registerEnhance,
-		submitting: registerSubmitting,
-		message: registerMessage,
-		constraints: registerConstrains
-	} = superForm(data.registerForm, {
-		resetForm: true,
-		invalidateAll: false
-	});
-
-	const {
-		form: loginForm,
-		errors: loginErrors,
-		enhance: loginEnhance,
-		message: loginMessage,
-		submitting: loginSubmitting,
-		constraints: loginConstrains
-	} = superForm(data.loginForm, {
-		resetForm: true,
-		invalidateAll: false
 	});
 </script>
 
@@ -52,81 +26,77 @@
 
 			<Separator class="opacity-20" />
 
-			{#if $registerMessage}
-				{@const message = $registerMessage}
-				{#if message.type === 'success'}
-					<p class="font-mono text-xs text-sidebar-primary">✓ {message.text}</p>
+			{#if register.result}
+				{#if register.result.type === 'success'}
+					<p class="font-mono text-xs text-sidebar-primary">✓ {register.result.text}</p>
 				{:else}
-					<p class="font-mono text-xs text-destructive">✗ {message.text}</p>
+					<p class="font-mono text-xs text-destructive">✗ {register.result.text}</p>
 				{/if}
 			{/if}
 
-			<form method="post" action="?/register" use:registerEnhance class="flex flex-col gap-3">
+			<form {...register} class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
-					<InputGroup.Root class={$registerErrors.username ? 'border-destructive' : ''}>
+					<InputGroup.Root
+						class={register.fields.username.issues()?.length ? 'border-destructive' : ''}
+					>
 						<InputGroup.Input
-							type="text"
-							name="username"
+							{...register.fields.username.as('text')}
 							placeholder="username"
 							autocomplete="username"
-							bind:value={$registerForm.username}
-							{...$registerConstrains.username}
 						/>
 						<InputGroup.Addon>
 							<UserIcon class="h-4 w-4" />
 						</InputGroup.Addon>
 					</InputGroup.Root>
-					{#if $registerErrors.username}
-						<p class="font-mono text-xs text-destructive">{$registerErrors.username}</p>
-					{/if}
+					{#each register.fields.username.issues() ?? [] as issue}
+						<p class="font-mono text-xs text-destructive">{issue.message}</p>
+					{/each}
 				</div>
 
 				<div class="flex flex-col gap-1">
-					<InputGroup.Root class={$registerErrors.email ? 'border-destructive' : ''}>
+					<InputGroup.Root
+						class={register.fields.email.issues()?.length ? 'border-destructive' : ''}
+					>
 						<InputGroup.Input
-							type="email"
-							name="email"
+							{...register.fields.email.as('email')}
 							placeholder="email"
 							autocomplete="email"
-							bind:value={$registerForm.email}
-							{...$registerConstrains.email}
 						/>
 						<InputGroup.Addon>
 							<MailIcon class="h-4 w-4" />
 						</InputGroup.Addon>
 					</InputGroup.Root>
-					{#if $registerErrors.email}
-						<p class="font-mono text-xs text-destructive">{$registerErrors.email}</p>
-					{/if}
+					{#each register.fields.email.issues() ?? [] as issue}
+						<p class="font-mono text-xs text-destructive">{issue.message}</p>
+					{/each}
 				</div>
 
 				<div class="flex flex-col gap-1">
-					<InputGroup.Root class={$registerErrors.password ? 'border-destructive' : ''}>
+					<InputGroup.Root
+						class={register.fields.password.issues()?.length ? 'border-destructive' : ''}
+					>
 						<InputGroup.Input
-							type="password"
-							name="password"
+							{...register.fields.password.as('password')}
 							placeholder="password"
 							autocomplete="new-password"
-							bind:value={$registerForm.password}
-							{...$registerConstrains.password}
 						/>
 						<InputGroup.Addon>
 							<LockKeyhole class="h-4 w-4" />
 						</InputGroup.Addon>
 					</InputGroup.Root>
-					{#if $registerErrors.password}
-						<p class="font-mono text-xs text-destructive">{$registerErrors.password}</p>
-					{/if}
+					{#each register.fields.password.issues() ?? [] as issue}
+						<p class="font-mono text-xs text-destructive">{issue.message}</p>
+					{/each}
 				</div>
 
 				<Button
 					type="submit"
 					variant="outline"
-					disabled={$registerSubmitting}
+					disabled={register.pending > 0}
 					class="mt-2 w-full gap-2 font-mono text-xs tracking-widest uppercase"
 				>
 					<UserPlus class="h-4 w-4" />
-					{$registerSubmitting ? 'creating...' : 'sign up'}
+					{register.pending > 0 ? 'creating...' : 'sign up'}
 				</Button>
 			</form>
 		</div>
@@ -147,62 +117,57 @@
 
 			<Separator class="opacity-20" />
 
-			{#if $loginMessage}
-				{@const message = $loginMessage}
-				{#if message.type === 'success'}
-					<p class="font-mono text-xs text-sidebar-primary">✓ {message.text}</p>
+			{#if login.result}
+				{#if login.result.type === 'success'}
+					<p class="font-mono text-xs text-sidebar-primary">✓ {login.result.text}</p>
 				{:else}
-					<p class="font-mono text-xs text-destructive">✗ {message.text}</p>
+					<p class="font-mono text-xs text-destructive">✗ {login.result.text}</p>
 				{/if}
 			{/if}
 
-			<form method="post" action="?/login" use:loginEnhance class="flex flex-col gap-3">
+			<form {...login} class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
-					<InputGroup.Root class={$loginErrors.email ? 'border-destructive' : ''}>
+					<InputGroup.Root class={login.fields.email.issues()?.length ? 'border-destructive' : ''}>
 						<InputGroup.Input
-							type="email"
-							name="email"
+							{...login.fields.email.as('email')}
 							placeholder="email"
 							autocomplete="email"
-							bind:value={$loginForm.email}
-							{...$loginConstrains.email}
 						/>
 						<InputGroup.Addon>
 							<MailIcon class="h-4 w-4" />
 						</InputGroup.Addon>
 					</InputGroup.Root>
-					{#if $loginErrors.email}
-						<p class="font-mono text-xs text-destructive">{$loginErrors.email}</p>
-					{/if}
+					{#each login.fields.email.issues() ?? [] as issue}
+						<p class="font-mono text-xs text-destructive">{issue.message}</p>
+					{/each}
 				</div>
 
 				<div class="flex flex-col gap-1">
-					<InputGroup.Root class={$loginErrors.password ? 'border-destructive' : ''}>
+					<InputGroup.Root
+						class={login.fields.password.issues()?.length ? 'border-destructive' : ''}
+					>
 						<InputGroup.Input
-							type="password"
-							name="password"
+							{...login.fields.password.as('password')}
 							placeholder="password"
 							autocomplete="current-password"
-							bind:value={$loginForm.password}
-							{...$loginConstrains.password}
 						/>
 						<InputGroup.Addon>
 							<LockKeyhole class="h-4 w-4" />
 						</InputGroup.Addon>
 					</InputGroup.Root>
-					{#if $loginErrors.password}
-						<p class="font-mono text-xs text-destructive">{$loginErrors.password}</p>
-					{/if}
+					{#each login.fields.password.issues() ?? [] as issue}
+						<p class="font-mono text-xs text-destructive">{issue.message}</p>
+					{/each}
 				</div>
 
 				<Button
 					type="submit"
 					variant="outline"
-					disabled={$loginSubmitting}
+					disabled={login.pending > 0}
 					class="mt-1 w-full gap-2 font-mono text-xs tracking-widest uppercase"
 				>
 					<LogIn class="h-4 w-4" />
-					{$loginSubmitting ? 'signing in...' : 'sign in'}
+					{login.pending > 0 ? 'signing in...' : 'sign in'}
 				</Button>
 
 				<div class="flex justify-end">

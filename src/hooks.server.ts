@@ -1,5 +1,5 @@
-import { redirect, type Handle } from '@sveltejs/kit';
-import { api } from '$lib/api';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { api } from '#lib/api.js';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const accessToken = event.cookies.get('accessToken');

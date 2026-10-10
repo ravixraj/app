@@ -1,13 +1,12 @@
 <script lang="ts">
-	import * as InputGroup from '$lib/components/ui/input-group/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
+	import * as InputGroup from '#lib/components/ui/input-group/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
 	import { LockKeyhole, ShieldCheck } from '@lucide/svelte';
-	import { superForm } from 'sveltekit-superforms';
 	import { MetaTags } from 'svelte-meta-tags';
-	import { createPageMetaTags } from '$lib/const.js';
-
-	let { data } = $props();
+	import { createPageMetaTags } from '#lib/const.js';
+	import { page } from '$app/state';
+	import { resetPassword } from './remote';
 
 	const metaTags = createPageMetaTags({
 		title: 'Reset Password',
@@ -15,7 +14,7 @@
 		canonical: '/reset-password'
 	});
 
-	const { form, errors, enhance, submitting, message } = superForm(data.form);
+	const token = $derived(page.url.searchParams.get('token') ?? '');
 </script>
 
 <div class="flex min-h-screen items-center justify-center px-4 py-12">
@@ -27,56 +26,62 @@
 
 		<Separator class="opacity-20" />
 
-		{#if $message}
-			{@const msg = $message}
-			{#if msg.type === 'success'}
+		{#if resetPassword.result}
+			{#if resetPassword.result.type === 'success'}
 				<p class="font-mono text-xs text-sidebar-primary">
-					✓ {msg.text}. <a href="/auth" class="underline">sign in</a>
+					✓ {resetPassword.result.text}. <a href="/auth" class="underline">sign in</a>
 				</p>
 			{:else}
-				<p class="font-mono text-xs text-destructive">✗ {msg.text}</p>
+				<p class="font-mono text-xs text-destructive">✗ {resetPassword.result.text}</p>
 			{/if}
 		{/if}
 
-		<form method="post" use:enhance class="flex flex-col gap-3">
+		{#if !token}
+			<p class="font-mono text-xs text-destructive">
+				missing reset token. please use the link from your email.
+			</p>
+		{/if}
+
+		<form {...resetPassword} class="flex flex-col gap-3">
+			<input {...resetPassword.fields.token.as('hidden', token)} />
 			<div class="flex flex-col gap-1">
-				<InputGroup.Root class={$errors.newPassword ? 'border-destructive' : ''}>
+				<InputGroup.Root
+					class={resetPassword.fields.newPassword.issues()?.length ? 'border-destructive' : ''}
+				>
 					<InputGroup.Input
-						type="password"
-						name="newPassword"
+						{...resetPassword.fields.newPassword.as('password')}
 						placeholder="new password"
-						bind:value={$form.newPassword}
 					/>
 					<InputGroup.Addon><LockKeyhole class="h-4 w-4" /></InputGroup.Addon>
 				</InputGroup.Root>
-				{#if $errors.newPassword}
-					<p class="font-mono text-xs text-destructive">{$errors.newPassword[0]}</p>
-				{/if}
+				{#each resetPassword.fields.newPassword.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
 			</div>
 
 			<div class="flex flex-col gap-1">
-				<InputGroup.Root class={$errors.confirmPassword ? 'border-destructive' : ''}>
+				<InputGroup.Root
+					class={resetPassword.fields.confirmPassword.issues()?.length ? 'border-destructive' : ''}
+				>
 					<InputGroup.Input
-						type="password"
-						name="confirmPassword"
+						{...resetPassword.fields.confirmPassword.as('password')}
 						placeholder="confirm password"
-						bind:value={$form.confirmPassword}
 					/>
 					<InputGroup.Addon><LockKeyhole class="h-4 w-4" /></InputGroup.Addon>
 				</InputGroup.Root>
-				{#if $errors.confirmPassword}
-					<p class="font-mono text-xs text-destructive">{$errors.confirmPassword}</p>
-				{/if}
+				{#each resetPassword.fields.confirmPassword.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
 			</div>
 
 			<Button
 				type="submit"
 				variant="outline"
-				disabled={$submitting}
+				disabled={resetPassword.pending > 0 || !token}
 				class="mt-2 w-full gap-2 font-mono text-xs tracking-widest uppercase"
 			>
 				<ShieldCheck class="h-4 w-4" />
-				{$submitting ? 'resetting...' : 'reset password'}
+				{resetPassword.pending > 0 ? 'resetting...' : 'reset password'}
 			</Button>
 		</form>
 	</div>

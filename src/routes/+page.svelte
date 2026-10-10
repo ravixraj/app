@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Button from '$lib/components/ui/button/button.svelte';
+	import Button from '#lib/components/ui/button/button.svelte';
 	import { Shield, Users, SquareCheck, Code, Server, ArrowRight } from '@lucide/svelte';
 	import { MetaTags } from 'svelte-meta-tags';
-	import { createPageMetaTags } from '$lib/const.js';
+	import { createPageMetaTags } from '#lib/const.js';
 
 	const metaTags = createPageMetaTags({
 		title: 'Home',

@@ -1,24 +1,25 @@
 <script lang="ts">
-	import { Rss, Bookmark, UserCircle, LogOut, UserPlus, Users } from '@lucide/svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
-	import { page } from '$app/stores';
-	import { api, BASE } from '$lib/api.js';
-	import Avatar from '$lib/components/ui/avatar/avatar.svelte';
-	import AvatarImage from '$lib/components/ui/avatar/avatar-image.svelte';
-	import AvatarFallback from '$lib/components/ui/avatar/avatar-fallback.svelte';
+	import { Rss, Bookmark, UserCircle, LogOut } from '@lucide/svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
+	import { page } from '$app/state';
+	import { api } from '#lib/api.js';
+	import Avatar from '#lib/components/ui/avatar/avatar.svelte';
+	import AvatarImage from '#lib/components/ui/avatar/avatar-image.svelte';
+	import AvatarFallback from '#lib/components/ui/avatar/avatar-fallback.svelte';
 
 	let { data, children } = $props();
 
 	// ── Nav links ─────────────────────────────────────────
-	const navLinks = [
+	// $derived so profile link stays in sync when `data` updates
+	const navLinks = $derived([
 		{ href: '/social/bookmarks', icon: Bookmark, label: 'bookmarks' },
 		{ href: `/social/${data.currentUser?.account?.username}`, icon: UserCircle, label: 'profile' }
-	];
+	]);
 
 	// ── Active link helper ────────────────────────────────
 	function isActive(href: string) {
-		return $page.url.pathname.startsWith(href);
+		return page.url.pathname.startsWith(href);
 	}
 </script>
 

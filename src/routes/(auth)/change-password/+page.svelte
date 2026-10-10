@@ -1,22 +1,16 @@
 <script lang="ts">
-	import * as InputGroup from '$lib/components/ui/input-group/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
+	import * as InputGroup from '#lib/components/ui/input-group/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
 	import { LockKeyhole, KeySquare } from '@lucide/svelte';
-	import { superForm } from 'sveltekit-superforms';
 	import { MetaTags } from 'svelte-meta-tags';
-	import { createPageMetaTags } from '$lib/const.js';
-
-	let { data } = $props();
+	import { createPageMetaTags } from '#lib/const.js';
+	import { changePassword } from './remote';
 
 	const metaTags = createPageMetaTags({
 		title: 'Change Password',
 		description: 'Update your account password securely.',
 		canonical: '/change-password'
-	});
-
-	const { form, errors, enhance, submitting, message, constraints } = superForm(data.form, {
-		resetForm: true
 	});
 </script>
 
@@ -29,74 +23,72 @@
 
 		<Separator class="opacity-20" />
 
-		{#if $message}
-			{@const msg = $message}
-			{#if msg.type === 'success'}
-				<p class="font-mono text-xs text-sidebar-primary">✓ {msg.text}</p>
+		{#if changePassword.result}
+			{#if changePassword.result.type === 'success'}
+				<p class="font-mono text-xs text-sidebar-primary">✓ {changePassword.result.text}</p>
 			{:else}
-				<p class="font-mono text-xs text-destructive">✗ {msg.text}</p>
+				<p class="font-mono text-xs text-destructive">✗ {changePassword.result.text}</p>
 			{/if}
 		{/if}
 
-		<form method="post" use:enhance class="flex flex-col gap-3">
+		<form {...changePassword} class="flex flex-col gap-3">
 			<div class="flex flex-col gap-1">
-				<InputGroup.Root class={$errors.oldPassword ? 'border-destructive' : ''}>
+				<InputGroup.Root
+					class={changePassword.fields.oldPassword.issues()?.length ? 'border-destructive' : ''}
+				>
 					<InputGroup.Input
-						type="password"
-						name="oldPassword"
+						{...changePassword.fields.oldPassword.as('password')}
 						placeholder="current password"
-						bind:value={$form.oldPassword}
-						{...$constraints.oldPassword}
 					/>
 					<InputGroup.Addon><LockKeyhole class="h-4 w-4" /></InputGroup.Addon>
 				</InputGroup.Root>
-				{#if $errors.oldPassword}
-					<p class="font-mono text-xs text-destructive">{$errors.oldPassword}</p>
-				{/if}
+				{#each changePassword.fields.oldPassword.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
 			</div>
 
 			<Separator class="opacity-10" />
 
 			<div class="flex flex-col gap-1">
-				<InputGroup.Root class={$errors.newPassword ? 'border-destructive' : ''}>
+				<InputGroup.Root
+					class={changePassword.fields.newPassword.issues()?.length ? 'border-destructive' : ''}
+				>
 					<InputGroup.Input
-						type="password"
-						name="newPassword"
+						{...changePassword.fields.newPassword.as('password')}
 						placeholder="new password"
-						bind:value={$form.newPassword}
-						{...$constraints.newPassword}
 					/>
 					<InputGroup.Addon><LockKeyhole class="h-4 w-4" /></InputGroup.Addon>
 				</InputGroup.Root>
-				{#if $errors.newPassword}
-					<p class="font-mono text-xs text-destructive">{$errors.newPassword[0]}</p>
-				{/if}
+				{#each changePassword.fields.newPassword.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
 			</div>
 
 			<div class="flex flex-col gap-1">
-				<InputGroup.Root class={$errors.confirmNewPassword ? 'border-destructive' : ''}>
+				<InputGroup.Root
+					class={changePassword.fields.confirmNewPassword.issues()?.length
+						? 'border-destructive'
+						: ''}
+				>
 					<InputGroup.Input
-						type="password"
-						name="confirmNewPassword"
+						{...changePassword.fields.confirmNewPassword.as('password')}
 						placeholder="confirm new password"
-						bind:value={$form.confirmNewPassword}
-						{...$constraints.confirmNewPassword}
 					/>
 					<InputGroup.Addon><LockKeyhole class="h-4 w-4" /></InputGroup.Addon>
 				</InputGroup.Root>
-				{#if $errors.confirmNewPassword}
-					<p class="font-mono text-xs text-destructive">{$errors.confirmNewPassword}</p>
-				{/if}
+				{#each changePassword.fields.confirmNewPassword.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
 			</div>
 
 			<Button
 				type="submit"
 				variant="outline"
-				disabled={$submitting}
+				disabled={changePassword.pending > 0}
 				class="mt-2 w-full gap-2 font-mono text-xs tracking-widest uppercase"
 			>
 				<KeySquare class="h-4 w-4" />
-				{$submitting ? 'updating...' : 'update password'}
+				{changePassword.pending > 0 ? 'updating...' : 'update password'}
 			</Button>
 		</form>
 	</div>

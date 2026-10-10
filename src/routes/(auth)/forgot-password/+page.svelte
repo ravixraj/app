@@ -1,22 +1,16 @@
 <script lang="ts">
-	import * as InputGroup from '$lib/components/ui/input-group/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
+	import * as InputGroup from '#lib/components/ui/input-group/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
 	import { MailIcon, KeyRound } from '@lucide/svelte';
-	import { superForm } from 'sveltekit-superforms';
 	import { MetaTags } from 'svelte-meta-tags';
-	import { createPageMetaTags } from '$lib/const.js';
-
-	let { data } = $props();
+	import { createPageMetaTags } from '#lib/const.js';
+	import { forgotPassword } from './remote';
 
 	const metaTags = createPageMetaTags({
 		title: 'Forgot Password',
 		description: 'Reset your FreeAPI account password. Enter your email to receive a reset link.',
 		canonical: '/forgot-password'
-	});
-
-	const { form, errors, enhance, submitting, message } = superForm(data.form, {
-		resetForm: true
 	});
 </script>
 
@@ -33,38 +27,35 @@
 			enter your email and we'll send you a link to reset your password.
 		</p>
 
-		{#if $message}
-			{#if $message.type === 'success'}
-				<p class="font-mono text-xs text-sidebar-primary">✓ {$message.text}</p>
+		{#if forgotPassword.result}
+			{#if forgotPassword.result.type === 'success'}
+				<p class="font-mono text-xs text-sidebar-primary">✓ {forgotPassword.result.text}</p>
 			{:else}
-				<p class="font-mono text-xs text-destructive">✗ {$message.text}</p>
+				<p class="font-mono text-xs text-destructive">✗ {forgotPassword.result.text}</p>
 			{/if}
 		{/if}
 
-		<form method="post" use:enhance class="flex flex-col gap-3">
+		<form {...forgotPassword} class="flex flex-col gap-3">
 			<div class="flex flex-col gap-1">
-				<InputGroup.Root class={$errors.email ? 'border-destructive' : ''}>
-					<InputGroup.Input
-						type="email"
-						name="email"
-						placeholder="email"
-						bind:value={$form.email}
-					/>
+				<InputGroup.Root
+					class={forgotPassword.fields.email.issues()?.length ? 'border-destructive' : ''}
+				>
+					<InputGroup.Input {...forgotPassword.fields.email.as('email')} placeholder="email" />
 					<InputGroup.Addon><MailIcon class="h-4 w-4" /></InputGroup.Addon>
 				</InputGroup.Root>
-				{#if $errors.email}
-					<p class="font-mono text-xs text-destructive">{$errors.email}</p>
-				{/if}
+				{#each forgotPassword.fields.email.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
 			</div>
 
 			<Button
 				type="submit"
 				variant="outline"
-				disabled={$submitting}
+				disabled={forgotPassword.pending > 0}
 				class="mt-2 w-full gap-2 font-mono text-xs tracking-widest uppercase"
 			>
 				<KeyRound class="h-4 w-4" />
-				{$submitting ? 'sending...' : 'send reset link'}
+				{forgotPassword.pending > 0 ? 'sending...' : 'send reset link'}
 			</Button>
 		</form>
 

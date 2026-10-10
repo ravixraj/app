@@ -1,10 +1,10 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
+	import favicon from '#lib/assets/favicon.svg';
 	import { ModeWatcher } from 'mode-watcher';
-	import AnimatedThemeToggler from '$lib/components/magic/animated-theme-toggler/animated-theme-toggler.svelte';
+	import AnimatedThemeToggler from '#lib/components/magic/animated-theme-toggler/animated-theme-toggler.svelte';
 	import { MetaTags } from 'svelte-meta-tags';
-	import { createBaseMetaTags } from '$lib/const.js';
+	import { createBaseMetaTags } from '#lib/const.js';
 
 	let { children } = $props();
 

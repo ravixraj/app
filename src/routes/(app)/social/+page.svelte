@@ -10,14 +10,16 @@
 		ChevronDown,
 		ChevronUp
 	} from '@lucide/svelte';
-	import * as InputGroup from '$lib/components/ui/input-group/index';
-	import { Button } from '$lib/components/ui/button/index';
-	import { Separator } from '$lib/components/ui/separator/index';
-	import { superForm } from 'sveltekit-superforms';
-	import { api } from '$lib/api';
-	import Avatar from '$lib/components/ui/avatar/avatar.svelte';
-	import AvatarImage from '$lib/components/ui/avatar/avatar-image.svelte';
-	import AvatarFallback from '$lib/components/ui/avatar/avatar-fallback.svelte';
+	import * as InputGroup from '#lib/components/ui/input-group/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
+	import { api } from '#lib/api.js';
+	import { invalidateAll } from '$app/navigation';
+	import Avatar from '#lib/components/ui/avatar/avatar.svelte';
+	import AvatarImage from '#lib/components/ui/avatar/avatar-image.svelte';
+	import AvatarFallback from '#lib/components/ui/avatar/avatar-fallback.svelte';
+	import { createPost } from './remote';
+	import { onDestroy } from 'svelte';
 
 	let { data } = $props();
 
@@ -50,20 +52,28 @@
 		createdAt: string;
 	};
 
-	// ── SuperForm (create post) ───────────────────────────
-	const { form, errors, enhance, submitting, message } = superForm(data.form, {
-		resetForm: true,
-		invalidateAll: true
-	});
-
-	// ── State ─────────────────────────────────────────────
-	let posts = $state<Post[]>(data.posts?.posts ?? []);
+	// ── Posts come straight from the server ─────────────
+	let posts: Post[] = $derived(data.posts?.posts ?? []);
 
 	let error = $state('');
 
 	// image preview
 	let imageFiles = $state<File[]>([]);
 	let imagePreviews = $state<string[]>([]);
+	let fileInput: HTMLInputElement | null = $state(null);
+
+	function clearPreviews() {
+		for (const url of imagePreviews) URL.revokeObjectURL(url);
+		imageFiles = [];
+		imagePreviews = [];
+	}
+
+	onDestroy(clearPreviews);
+
+	// Clear previews after a successful post (the form element resets itself)
+	$effect(() => {
+		if (createPost.result?.type === 'success' && imagePreviews.length > 0) clearPreviews();
+	});
 
 	// comments per post
 	let openComments = $state<Record<string, boolean>>({});
@@ -73,38 +83,38 @@
 	let editingCommentByPost = $state<Record<string, string | null>>({});
 	let editCommentInput = $state<Record<string, string>>({});
 
-	// ── Sync posts when load() re-runs ───────────────────
-	$effect(() => {
-		posts = data.posts?.posts ?? [];
-	});
-
 	// ── Image handling ────────────────────────────────────
 	function onImageChange(e: Event) {
 		const input = e.target as HTMLInputElement;
-		const files = Array.from(input.files ?? []);
-		imageFiles = files.slice(0, 4); // max 4
+		clearPreviews();
+		imageFiles = Array.from(input.files ?? []).slice(0, 4); // max 4
 		imagePreviews = imageFiles.map((f) => URL.createObjectURL(f));
 	}
 
 	function removeImage(i: number) {
+		URL.revokeObjectURL(imagePreviews[i]);
 		imageFiles = imageFiles.filter((_, idx) => idx !== i);
 		imagePreviews = imagePreviews.filter((_, idx) => idx !== i);
+		// Sync the actual file input — otherwise the removed file is still submitted
+		if (fileInput) {
+			const dt = new DataTransfer();
+			for (const f of imageFiles) dt.items.add(f);
+			fileInput.files = dt.files;
+			fileInput.dispatchEvent(new Event('input', { bubbles: true }));
+		}
 	}
 
 	// ── Like ──────────────────────────────────────────────
 	async function toggleLike(post: Post) {
 		try {
-			if (post.isLiked) {
-				await api.del(`social-media/like/post/${post._id}`, data.accessToken);
-				posts = posts.map((p) =>
-					p._id === post._id ? { ...p, isLiked: false, likes: p.likes - 1 } : p
-				);
-			} else {
-				await api.post(`social-media/like/post/${post._id}`, {}, data.accessToken);
-				posts = posts.map((p) =>
-					p._id === post._id ? { ...p, isLiked: true, likes: p.likes + 1 } : p
-				);
+			const res = post.isLiked
+				? await api.del(`social-media/like/post/${post._id}`, data.accessToken)
+				: await api.post(`social-media/like/post/${post._id}`, {}, data.accessToken);
+			if (!res.ok) {
+				error = 'failed to update like.';
+				return;
 			}
+			await invalidateAll();
 		} catch {
 			error = 'failed to update like.';
 		}
@@ -113,13 +123,14 @@
 	// ── Bookmark ──────────────────────────────────────────
 	async function toggleBookmark(post: Post) {
 		try {
-			if (post.isBookmarked) {
-				await api.del(`social-media/bookmarks/${post._id}`, data.accessToken);
-				posts = posts.map((p) => (p._id === post._id ? { ...p, isBookmarked: false } : p));
-			} else {
-				await api.post(`social-media/bookmarks/${post._id}`, {}, data.accessToken);
-				posts = posts.map((p) => (p._id === post._id ? { ...p, isBookmarked: true } : p));
+			const res = post.isBookmarked
+				? await api.del(`social-media/bookmarks/${post._id}`, data.accessToken)
+				: await api.post(`social-media/bookmarks/${post._id}`, {}, data.accessToken);
+			if (!res.ok) {
+				error = 'failed to update bookmark.';
+				return;
 			}
+			await invalidateAll();
 		} catch {
 			error = 'failed to update bookmark.';
 		}
@@ -128,8 +139,12 @@
 	// ── Delete post ───────────────────────────────────────
 	async function deletePost(id: string) {
 		try {
-			await api.del(`social-media/posts/${id}`, data.accessToken);
-			posts = posts.filter((p) => p._id !== id);
+			const res = await api.del(`social-media/posts/${id}`, data.accessToken);
+			if (!res.ok) {
+				error = 'failed to delete post.';
+				return;
+			}
+			await invalidateAll();
 		} catch {
 			error = 'failed to delete post.';
 		}
@@ -165,15 +180,14 @@
 				{ content },
 				data.accessToken
 			);
-			console.log({ res });
 			const json = await res.json();
 			if (!res.ok) {
 				error = json?.message || 'failed to add comment.';
 				return;
 			}
 			commentsMap[postId] = [json.data, ...(commentsMap[postId] ?? [])];
-			posts = posts.map((p) => (p._id === postId ? { ...p, comments: p.comments + 1 } : p));
 			commentInput[postId] = '';
+			await invalidateAll();
 		} catch {
 			error = 'failed to add comment.';
 		}
@@ -188,11 +202,11 @@
 				return;
 			}
 			commentsMap[postId] = commentsMap[postId].filter((c) => c._id !== commentId);
-			posts = posts.map((p) => (p._id === postId ? { ...p, comments: p.comments - 1 } : p));
 			if (editingCommentByPost[postId] === commentId) {
 				editingCommentByPost[postId] = null;
 				delete editCommentInput[commentId];
 			}
+			await invalidateAll();
 		} catch {
 			error = 'failed to delete comment.';
 		}
@@ -248,21 +262,22 @@
 <div class="flex min-h-screen flex-col items-center px-4 py-12">
 	<div class="flex w-full max-w-xl flex-col gap-6">
 		<!-- Create Post -->
-		<form method="POST" use:enhance enctype="multipart/form-data" class="flex flex-col gap-2">
+		<form {...createPost} enctype="multipart/form-data" class="flex flex-col gap-2">
 			<p class="font-mono text-xs tracking-widest text-muted-foreground uppercase">new post</p>
 
 			<div class="flex flex-col gap-1">
-				<InputGroup.Root class={$errors.content ? 'border-destructive' : ''}>
+				<InputGroup.Root
+					class={createPost.fields.content.issues()?.length ? 'border-destructive' : ''}
+				>
 					<InputGroup.Textarea
-						name="content"
+						{...createPost.fields.content.as('text')}
 						placeholder="what's on your mind..."
-						bind:value={$form.content}
 						rows={3}
 					/>
 				</InputGroup.Root>
-				{#if $errors.content}
-					<p class="font-mono text-xs text-destructive">{$errors.content}</p>
-				{/if}
+				{#each createPost.fields.content.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
 			</div>
 
 			<!-- Image previews -->
@@ -283,13 +298,13 @@
 				</div>
 			{/if}
 
-			{#if $message}
+			{#if createPost.result}
 				<p
 					class="font-mono text-xs"
-					class:text-sidebar-primary={$message.type === 'success'}
-					class:text-destructive={$message.type === 'error'}
+					class:text-sidebar-primary={createPost.result.type === 'success'}
+					class:text-destructive={createPost.result.type === 'error'}
 				>
-					{$message.text}
+					{createPost.result.text}
 				</p>
 			{/if}
 
@@ -301,11 +316,10 @@
 					<ImagePlus class="h-3.5 w-3.5" />
 					images
 					<input
-						type="file"
-						name="images"
+						{...createPost.fields.images.as('file multiple')}
 						accept="image/*"
-						multiple
 						class="hidden"
+						bind:this={fileInput}
 						onchange={onImageChange}
 					/>
 				</label>
@@ -313,11 +327,11 @@
 				<Button
 					type="submit"
 					variant="outline"
-					disabled={$submitting}
+					disabled={createPost.pending > 0}
 					class="flex-1 gap-2 font-mono text-xs tracking-widest uppercase"
 				>
 					<Send class="h-4 w-4" />
-					{$submitting ? 'posting...' : 'post'}
+					{createPost.pending > 0 ? 'posting...' : 'post'}
 				</Button>
 			</div>
 		</form>

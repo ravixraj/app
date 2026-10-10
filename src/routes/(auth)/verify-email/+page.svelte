@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
-	import { MailCheck, RefreshCw } from '@lucide/svelte';
-	import { superForm } from 'sveltekit-superforms';
+	import * as InputGroup from '#lib/components/ui/input-group/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
+	import { MailCheck, RefreshCw, MailIcon } from '@lucide/svelte';
 	import { MetaTags } from 'svelte-meta-tags';
-	import { createPageMetaTags } from '$lib/const.js';
+	import { createPageMetaTags } from '#lib/const.js';
+	import { resendVerification } from './remote';
 
 	let { data } = $props();
 
@@ -13,8 +14,6 @@
 		description: 'Verify your email address to activate your FreeAPI account.',
 		canonical: '/verify-email'
 	});
-
-	const { enhance, submitting } = superForm(data.resendForm);
 </script>
 
 <div class="flex min-h-screen items-center justify-center px-4 py-12">
@@ -37,15 +36,34 @@
 			</p>
 		{/if}
 
-		<form method="post" use:enhance class="flex flex-col gap-3">
+		{#if resendVerification.result}
+			{#if resendVerification.result.type === 'success'}
+				<p class="font-mono text-xs text-sidebar-primary">✓ {resendVerification.result.text}</p>
+			{:else}
+				<p class="font-mono text-xs text-destructive">✗ {resendVerification.result.text}</p>
+			{/if}
+		{/if}
+
+		<form {...resendVerification} class="flex flex-col gap-3">
+			<div class="flex flex-col gap-1">
+				<InputGroup.Root
+					class={resendVerification.fields.email.issues()?.length ? 'border-destructive' : ''}
+				>
+					<InputGroup.Input {...resendVerification.fields.email.as('email')} placeholder="email" />
+					<InputGroup.Addon><MailIcon class="h-4 w-4" /></InputGroup.Addon>
+				</InputGroup.Root>
+				{#each resendVerification.fields.email.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
+			</div>
 			<Button
 				type="submit"
 				variant="outline"
-				disabled={$submitting}
+				disabled={resendVerification.pending > 0}
 				class="w-full gap-2 font-mono text-xs tracking-widest uppercase"
 			>
 				<RefreshCw class="h-4 w-4" />
-				{$submitting ? 'sending...' : 'resend verification email'}
+				{resendVerification.pending > 0 ? 'sending...' : 'resend verification email'}
 			</Button>
 		</form>
 

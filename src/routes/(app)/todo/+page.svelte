@@ -10,15 +10,15 @@
 		Filter,
 		FileText
 	} from '@lucide/svelte';
-	import * as InputGroup from '$lib/components/ui/input-group/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
-	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
-	import { api } from '$lib/api.js';
-	import { superForm } from 'sveltekit-superforms';
+	import * as InputGroup from '#lib/components/ui/input-group/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { page } from '$app/state';
+	import { api } from '#lib/api.js';
 	import { MetaTags } from 'svelte-meta-tags';
+	import { createTodo } from './remote';
 
 	let { data } = $props();
 
@@ -30,38 +30,30 @@
 		updatedAt: string;
 	};
 
-	const { form, errors, enhance, submitting, message, constraints } = superForm(data.form, {
-		resetForm: true,
-		invalidateAll: false
-	});
-
-	// ── State ─────────────────────────────────────────────
-	let todos = $state<Todo[]>(data.todos);
+	// ── Todos come straight from the server ─────────────
+	let todos: Todo[] = $derived(data.todos ?? []);
 	let loading = $state(false);
 	let error = $state('');
 
 	// filters
-	let searchQuery = $state($page.url.searchParams.get('query') ?? '');
-	let filterComplete = $state($page.url.searchParams.get('complete') ?? 'all');
+	let searchQuery = $state(page.url.searchParams.get('query') ?? '');
+
+	let filterComplete = $state(page.url.searchParams.get('complete') ?? 'all');
 
 	// edit state
 	let editingId = $state<string | null>(null);
 	let editTitle = $state('');
 	let editDescription = $state('');
 
-	// ── Sync todos when load() returns new data ───────────
-	$effect(() => {
-		todos = data.todos;
-	});
-
-	// ── Search/filter → update URL → re-runs load() ───────
+	// ── Search/filter → update URL → re-runs load() (debounced) ─
 	$effect(() => {
 		const params = new URLSearchParams();
 		if (searchQuery.trim()) params.set('query', searchQuery.trim());
 		if (filterComplete !== 'all')
 			params.set('complete', filterComplete === 'done' ? 'true' : 'false');
 
-		goto(`?${params}`, { keepFocus: true, noScroll: true });
+		const t = setTimeout(() => goto(`?${params}`, { reset: false }), 300);
+		return () => clearTimeout(t);
 	});
 
 	// ── Derived counts ────────────────────────────────────
@@ -72,8 +64,11 @@
 	async function toggleTodo(id: string) {
 		try {
 			const res = await api.patch(`todos/toggle/status/${id}`, {});
-			const json = await res.json();
-			todos = todos.map((t) => (t._id === id ? json.data : t));
+			if (!res.ok) {
+				error = 'failed to toggle todo.';
+				return;
+			}
+			await invalidateAll();
 		} catch {
 			error = 'failed to toggle todo.';
 		}
@@ -82,8 +77,12 @@
 	// Delete a todo
 	async function deleteTodo(id: string) {
 		try {
-			await api.del(`todos/${id}`);
-			todos = todos.filter((t) => t._id !== id);
+			const res = await api.del(`todos/${id}`);
+			if (!res.ok) {
+				error = 'failed to delete todo.';
+				return;
+			}
+			await invalidateAll();
 		} catch {
 			error = 'failed to delete todo.';
 		}
@@ -101,9 +100,12 @@
 				title: editTitle,
 				description: editDescription
 			});
-			const json = await res.json();
-			todos = todos.map((t) => (t._id === id ? json.data : t));
+			if (!res.ok) {
+				error = 'failed to update todo.';
+				return;
+			}
 			editingId = null;
+			await invalidateAll();
 		} catch {
 			error = 'failed to update todo.';
 		}
@@ -128,57 +130,51 @@
 		<Separator class="opacity-20" />
 
 		<!-- Create -->
-		<form method="POST" use:enhance class="flex flex-col gap-2">
+		<form {...createTodo} class="flex flex-col gap-2">
 			<p class="font-mono text-xs tracking-widest text-muted-foreground uppercase">new</p>
 
 			<div class="flex flex-col gap-1">
-				<InputGroup.Root class={$errors.title ? 'border-destructive' : ''}>
-					<InputGroup.Input
-						type="text"
-						name="title"
-						placeholder="todo title"
-						bind:value={$form.title}
-					/>
+				<InputGroup.Root
+					class={createTodo.fields.title.issues()?.length ? 'border-destructive' : ''}
+				>
+					<InputGroup.Input {...createTodo.fields.title.as('text')} placeholder="todo title" />
 					<InputGroup.Addon><FileText class="h-4 w-4" /></InputGroup.Addon>
 				</InputGroup.Root>
-				{#if $errors.title}
-					<p class="font-mono text-xs text-destructive">{$errors.title}</p>
-					<!-- ← here -->
-				{/if}
+				{#each createTodo.fields.title.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
 			</div>
 
 			<div class="flex flex-col gap-1">
 				<InputGroup.Root>
 					<InputGroup.Textarea
-						name="description"
+						{...createTodo.fields.description.as('text')}
 						placeholder="description (optional)"
-						bind:value={$form.description}
 					/>
 				</InputGroup.Root>
-				{#if $errors.description}
-					<p class="font-mono text-xs text-destructive">{$errors.description}</p>
-					<!-- ← here -->
-				{/if}
+				{#each createTodo.fields.description.issues() ?? [] as issue}
+					<p class="font-mono text-xs text-destructive">{issue.message}</p>
+				{/each}
 			</div>
 
-			{#if $message}
+			{#if createTodo.result}
 				<p
 					class="font-mono text-xs"
-					class:text-sidebar-primary={$message.type === 'success'}
-					class:text-destructive={$message.type === 'error'}
+					class:text-sidebar-primary={createTodo.result.type === 'success'}
+					class:text-destructive={createTodo.result.type === 'error'}
 				>
-					{$message.text}
+					{createTodo.result.text}
 				</p>
 			{/if}
 
 			<Button
-                type="submit"
+				type="submit"
 				variant="outline"
-				disabled={$submitting}
+				disabled={createTodo.pending > 0}
 				class="w-full gap-2 font-mono text-xs tracking-widest uppercase"
 			>
 				<Plus class="h-4 w-4" />
-				{$submitting ? 'adding...' : 'add todo'}
+				{createTodo.pending > 0 ? 'adding...' : 'add todo'}
 			</Button>
 		</form>
 
@@ -294,9 +290,10 @@
 								{/if}
 							</div>
 							<div class="flex shrink-0 items-center gap-1">
-								<Button variant="ghost" size="icon" onclick={() => startEdit(todo)} class="h-6 w-6">
-									<Pencil class="h-3 w-3" />
-								</Button>
+								<Button variant="ghost" size="icon" onclick={() => startEdit(todo)} class="h-6 w-6"
+									><Pencil class="h-3 w-3" /></Button
+								>
+
 								<Button
 									variant="ghost"
 									size="icon"

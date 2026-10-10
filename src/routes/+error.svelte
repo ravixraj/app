@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
+	import { page } from '$app/state';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
 	import { AlertTriangle, Home, RotateCcw } from '@lucide/svelte';
 </script>
 
@@ -17,11 +17,10 @@
 
 		<!-- Error Code + Message -->
 		<div class="flex flex-col gap-2">
-			<p class="font-mono text-4xl font-bold tracking-widest text-sidebar-primary">
-				{$page.status}
-			</p>
+			<p class="font-mono text-4xl font-bold tracking-widest text-sidebar-primary">{page.status}</p>
+
 			<p class="font-mono text-xs text-muted-foreground">
-				{$page.error?.message ?? 'An unexpected error occurred.'}
+				{page.error?.message ?? 'An unexpected error occurred.'}
 			</p>
 		</div>
 

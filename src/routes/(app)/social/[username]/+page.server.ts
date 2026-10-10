@@ -1,4 +1,4 @@
-import { api } from '$lib/api';
+import { api } from '#lib/api.js';
 import { redirect } from '@sveltejs/kit';
 
 export const load = async ({ params, locals }) => {
